@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --bg-color: #121212;
+      --text-color: #ffffff;
+      --border-color: #555;
+      --canvas-bg: #1e1e1e;
+      --check-purple: #800080;
+    }
+    body.light-mode {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --border-color: #ccc;
+      --canvas-bg: #ffffff;
+    }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      height: 100vh;
+    }
+    .left, .right {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+    }
+    #theme-toggle {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+    }
+    img#menu {
+      width: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      margin-top: 50px;
+    }
+    .container {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    canvas {
+      width: 100%;
+      height: 600px;
+      border: 1px solid var(--border-color);
+      background-color: var(--canvas-bg);
+      touch-action: none;
+    }
+    label {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .form-control, .btn {
+      margin-top: 10px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .color-picker {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .color-option {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: pointer;
+    }
+    .eraser-icon {
+      font-size: 2rem;
+      cursor: pointer;
+      color: #ccc;
+    }
+    .eraser-icon.active {
+      color: #ff6666;
+    }
+    .checklist {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    .checklist label {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+    .checklist input[type="checkbox"] {
+      transform: scale(2);
+      margin-right: 10px;
+      cursor: pointer;
+      accent-color: var(--check-purple);
+    }
+    canvas.eraser-cursor {
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAI0lEQVQoU2NkYGD4z0ABYBQQNFXAxGgCIyqAoRZDJGkAAC0JATlGjjG8wAAAABJRU5ErkJggg==') 6 6, auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <div class="container">
+      <h2 style="text-align: center;">Did Big Back Eat???</h2>
+      <div class="checklist" id="checklist">
+        <label><input type="checkbox" data-id="fed-morning"> Greenie</label>
+        <label><input type="checkbox" data-id="fed-evening"> 1/2 Scoop</label>
+      </div>
+    </div>
+    <div class="container">
+      <canvas id="pad"></canvas>
+      <div class="toolbar">
+        <button id="clear-btn" class="btn btn-danger">Clear</button>
+        <div class="toolbar-right">
+          <div class="color-picker">
+            <div class="color-option" data-color="#000" style="background-color: #000;"></div>
+            <div class="color-option" data-color="#9a02ff" style="background-color: #9a02ff;"></div>
+            <div class="color-option" data-color="#f00" style="background-color: #f00;"></div>
+            <div class="color-option" data-color="#00f" style="background-color: #00f;"></div>
+            <div class="color-option" data-color="#080" style="background-color: #080;"></div>
+          </div>
+          <i id="eraser-icon" class="bi bi-eraser-fill eraser-icon" title="Eraser Mode"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <button id="theme-toggle" class="btn btn-secondary" title="Toggle Dark/Light Mode">
+      <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
+    </button>
+    <img id="menu" src="https://pryanalewis.github.io/home-dashboard/whits.jpg" alt="Monthly Menu">
+  </div>
+
+  <script>
+    const canvas = document.getElementById('pad');
+    const ctx = canvas.getContext('2d');
+    const eraserIcon = document.getElementById('eraser-icon');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const colorOptions = document.querySelectorAll('.color-option');
+
+    let penColor = "#000";
+    let eraserSize = 20;
+    let eraserMode = false;
+
+    let drawing = false;
+
+    colorOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        penColor = option.getAttribute('data-color');
+        eraserMode = false;
+        eraserIcon.classList.remove('active');
+      });
+    });
+
+    eraserIcon.addEventListener('click', () => {
+      eraserMode = !eraserMode;
+      eraserIcon.classList.toggle('active', eraserMode);
+    });
+
+    themeToggle?.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      if (document.body.classList.contains('light-mode')) {
+        themeIcon.classList.remove('bi-moon-stars-fill');
+        themeIcon.classList.add('bi-sun-fill');
+      } else {
+        themeIcon.classList.remove('bi-sun-fill');
+        themeIcon.classList.add('bi-moon-stars-fill');
+      }
+    });
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const saved = localStorage.getItem('padImage');
+      if (saved) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = saved;
+      }
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function startDraw(e) {
+      if (eraserMode) canvas.classList.add('eraser-cursor');
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineWidth = eraserMode ? eraserSize : 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = eraserMode ? getComputedStyle(canvas).backgroundColor : penColor;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      canvas.classList.remove('eraser-cursor');
+      drawing = false;
+      localStorage.setItem('padImage', canvas.toDataURL());
+    }
+
+    canvas.addEventListener('pointerdown', startDraw);
+    canvas.addEventListener('pointermove', draw);
+    canvas.addEventListener('pointerup', endDraw);
+    canvas.addEventListener('pointerleave', endDraw);
+
+    document.getElementById('clear-btn')?.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      localStorage.removeItem('padImage');
+    });
+
+    const checklist = document.getElementById('checklist');
+    const today = new Date().toLocaleDateString();
+    const savedChecks = JSON.parse(localStorage.getItem('checklist') || '{}');
+    const lastSavedDate = localStorage.getItem('checklistDate');
+
+    if (lastSavedDate !== today) {
+      localStorage.removeItem('checklist');
+      localStorage.setItem('checklistDate', today);
+    }
+
+    checklist?.querySelectorAll('input[type="checkbox"]').forEach(box => {
+      const id = box.dataset.id;
+      const checks = JSON.parse(localStorage.getItem('checklist') || '{}');
+      if (checks[id]) box.checked = true;
+      box.addEventListener('change', () => {
+        const updatedChecks = JSON.parse(localStorage.getItem('checklist') || '{}');
+        updatedChecks[id] = box.checked;
+        localStorage.setItem('checklist', JSON.stringify(updatedChecks));
+        localStorage.setItem('checklistDate', today);
+      });
+    });
+  </script>
+</body>
+</html>
