@@ -60,7 +60,7 @@
     }
     canvas {
       width: 100%;
-      height: 600px;
+      height: 70vh; /* 70% of screen height */
       border: 1px solid var(--border-color);
       background-color: var(--canvas-bg);
       touch-action: none;
@@ -125,6 +125,35 @@
     canvas.eraser-cursor {
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAI0lEQVQoU2NkYGD4z0ABYBQQNFXAxGgCIyqAoRZDJGkAAC0JATlGjjG8wAAAABJRU5ErkJggg==') 6 6, auto;
     }
+    /* Bigger & more spaced toolbar elements on large screens */
+    @media (min-width: 1200px) {
+      .color-option {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+        margin-right: 8px; /* extra space between circles */
+      }
+
+      .eraser-icon {
+        font-size: 3rem;
+        margin-left: 12px; /* space between colors and eraser */
+      }
+
+      #clear-btn {
+        font-size: 1.25rem;  /* Larger text */
+        padding: 0.75rem 1.5rem; /* Bigger tap area */
+        margin-right: 12px; /* space before color options */
+      }
+
+      .toolbar {
+        gap: 20px; /* more breathing room in the toolbar */
+      }
+
+      .toolbar-right {
+        gap: 20px; /* space between color group and eraser */
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -209,6 +238,7 @@
         img.src = saved;
       }
     }
+
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
